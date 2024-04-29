@@ -1,244 +1,265 @@
 ﻿using System.ComponentModel;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
-using System.Net.NetworkInformation;
 using MessageNS;
-using System;
-using System.IO;
 
-
+// SendTo();
 class Program
 {
     static void Main(string[] args)
     {
         ClientUDP cUDP = new ClientUDP();
-        cUDP.Start();
+        cUDP.start();
     }
 }
 
 class ClientUDP
 {
-    private const int ServerPort = 32000;
-    private Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-    private const int Threshold = 20;
-    private int TxtCount = 0;
+    // Initialize Client socket
+    private Socket Client = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+    
+    // Port of the server
+    private const int Port = 32000;
 
-    private Dictionary<int, string>? packets = new Dictionary<int, string>();
-    public void Start()
+    // Traffic threshold of the client
+    private const int Threshold = 30;
+
+    // Output file for all received text
+    private const string OutputFile = "output.txt";
+    
+    // Temporary storage for all incoming messages
+    // Format: ID, Content
+    private Dictionary<int, string> receivedText = new Dictionary<int, string>();
+
+    // Tuple to hold track of the sequence between the server and the client
+    private (bool HelloSent, bool WelcomeReceived, bool RequestDataSent, bool EndReceived) SequenceHolder = new();
+
+    // Boolean variable to check if an error has been sent by the client
+    private bool errorSent = false;
+
+    // Boolean variable to check if an error has been received by the client
+    private bool errorReceived = false;
+
+    //TODO: implement all necessary logic to create sockets and handle incoming messages
+    // Do not put all the logic into one method. Create multiple methods to handle different tasks.
+    public void start()
     {
+        (IPAddress hostAddress, IPEndPoint serverEndpoint) objects = InitializeClient();
+        IPAddress hostAddress = objects.hostAddress;
+        IPEndPoint serverEndpoint = objects.serverEndpoint;
+        Console.WriteLine($"Host address: {hostAddress}\nExpected server address: {serverEndpoint}");
+
         try
         {
-            // Fill packet dict
-            for (int i = 1; i <= 999; i++)
-            {
-                packets!.Add(i, "");
-            }
-
-            Console.WriteLine("Client started!");
-
-            // Generate objects like host address and server endpoint
-            (IPAddress hostAddress, IPEndPoint serverEndpoint) objects = GenerateObjects();
-
-            //Console.WriteLine($"Expected host address: {objects.hostAddress}");
-            //Console.WriteLine($"Expected server address: {objects.serverEndpoint}");
-
-            // Create messages
-            Message hello_message = new Message
+            // Create discovery message
+            Message discovery = new Message
             {
                 Type = MessageType.Hello,
                 Content = $"{Threshold}"
             };
 
-            // Send the Hello message to the server
-            SendMessage(hello_message, objects.serverEndpoint);
+            // Send discovery message to the server
+            SendMessage(discovery, serverEndpoint);
+            SequenceHolder = (true, SequenceHolder.WelcomeReceived, SequenceHolder.RequestDataSent, SequenceHolder.EndReceived);
 
-            // Receive message from server
-            ReceiveMessage(objects.serverEndpoint);
-
-            while (true)
+            // Start listening
+            while (SequenceHolder.EndReceived == false && !errorReceived && !errorSent)
             {
-                ReceiveMessage(objects.serverEndpoint);
+                ReceiveMessage(serverEndpoint);
             }
 
+            Console.WriteLine("Shutting down client.");
+            Client.Close();
+            Client.Dispose();
+            Environment.Exit(0);
         }
-        catch (Exception ex)
+        catch (Exception ex) 
         {
-            HandleErrors(ex);
-        }
-        finally
-        {
-            client.Close();
-            client.Dispose();
+            Console.WriteLine(ex.ToString());
         }
     }
 
-    private (IPAddress hostAddress, IPEndPoint serverEndPoint) GenerateObjects()
+    //TODO: create all needed objects for your sockets 
+    private (IPAddress hostAddress, IPEndPoint serverEndpoint) InitializeClient()
     {
         string ipOutput = "";
 
-        foreach (NetworkInterface item in NetworkInterface.GetAllNetworkInterfaces())
+        try
         {
-            if (item.NetworkInterfaceType != NetworkInterfaceType.Loopback && item.OperationalStatus == OperationalStatus.Up)
+            foreach (NetworkInterface item in NetworkInterface.GetAllNetworkInterfaces())
             {
-                foreach (UnicastIPAddressInformation ip in item.GetIPProperties().UnicastAddresses)
+                if (item.NetworkInterfaceType != NetworkInterfaceType.Loopback && item.OperationalStatus == OperationalStatus.Up)
                 {
-                    if (ip.Address.AddressFamily == AddressFamily.InterNetwork)
+                    foreach (UnicastIPAddressInformation ip in item.GetIPProperties().UnicastAddresses)
                     {
-                        ipOutput = ip.Address.ToString();
-                        break;
+                        if (ip.Address.AddressFamily == AddressFamily.InterNetwork)
+                        {
+                            ipOutput = ip.Address.ToString();
+                            break;
+                        }
                     }
                 }
             }
         }
-
-        IPAddress hostAddress = IPAddress.Parse(ipOutput);
-
-        if (hostAddress is null)
+        catch
         {
-            throw new Exception("Client host address is null");
+            Console.WriteLine("Unable to grab IP-address of this machine.");
         }
 
-        IPEndPoint serverEndpoint = new IPEndPoint(hostAddress, ServerPort);
+        IPAddress hostAddress = IPAddress.Parse(ipOutput) ?? throw new Exception("Client host address is null");
+        IPEndPoint serverEndpoint = new IPEndPoint(hostAddress, Port);
 
         return (hostAddress, serverEndpoint);
     }
 
-    //private (IPAddress hostAddress, IPEndPoint serverEndPoint) GenerateObjects()
-    //{
-    //    IPAddress hostAddress = IPAddress.Loopback; // Returns loopback address 127.0.0.1
-    //    IPEndPoint serverEndpoint = new IPEndPoint(hostAddress, ServerPort);
-
-    //    return (hostAddress, serverEndpoint);
-    //}
-
-    private void SendMessage(Message message, IPEndPoint endPoint)
+    //TODO: [Send Hello message]
+    //TODO: [Send RequestData]
+    //TODO: [Send RequestData]
+    //TODO: [Send End] ??
+    private void SendMessage(Message message, IPEndPoint serverEndpoint)
     {
         if (message is null) return;
 
         try
         {
-            string serializedMessage = JsonSerializer.Serialize(message);
-            byte[] data = Encoding.ASCII.GetBytes(serializedMessage);
+            // Convert Message object to JSON
+            var serializedMessage = JsonSerializer.Serialize(message);
 
-            Console.WriteLine($"Sending {data.Length} bytes of type {message.Type} to {endPoint}");
+            // Convert JSON to byte[]
+            var encodedMessage = Encoding.ASCII.GetBytes(serializedMessage);
 
-            client.SendTo(data, endPoint);
+            // Log sending message
+            Console.WriteLine($"Sending {encodedMessage.Length} bytes of type {message.Type} to {serverEndpoint}");
+
+            // Send message
+            Client.SendTo(encodedMessage, serverEndpoint);
         }
         catch (Exception ex)
         {
-            HandleErrors(ex);
+            Console.WriteLine($"An error occured while sending a message of type {message.Type} to {serverEndpoint}\n{ex.ToString}");
         }
     }
 
-    private void ReceiveMessage(IPEndPoint endPoint)
+    private void SendMessage(MessageType messageType, IPEndPoint serverEndpoint)
+    {
+        Message message = new Message { Type = messageType };
+        SendMessage(message, serverEndpoint);
+    }
+
+    //TODO: [Receive Welcome]
+    //TODO: [Receive Data]
+    //TODO: [Handle Errors]
+    private void ReceiveMessage(IPEndPoint serverEndpoint)
     {
         try
         {
             EndPoint serverEndPoint = new IPEndPoint(IPAddress.Any, 0);
 
             byte[] buffer = new byte[4096]; // Adjust the buffer size according to your message size
-            int bytesRead = client.ReceiveFrom(buffer, ref serverEndPoint);
+            int bytesRead = Client.ReceiveFrom(buffer, ref serverEndPoint);
+            
+            // Decode message from byte[] to string
             string receivedMessage = Encoding.ASCII.GetString(buffer).Trim('\0');
 
             // Deserialize the received message back into a Message object
             Message message = JsonSerializer.Deserialize<Message>(receivedMessage)!;
-            //Console.WriteLine($"Message received with {message.Type}");
 
             // Handle message based on type
             switch (message.Type)
             {
                 case MessageType.Welcome:
-                    HandleWelcome(endPoint);
+                    HandleWelcome(serverEndpoint);
                     break;
                 case MessageType.End:
                     HandleEnd();
                     break;
                 case MessageType.Data:
-                    HandleData(message, endPoint);
+                    HandleData(message, serverEndpoint);
                     break;
                 default:
-                    HandleUnknown(message, endPoint);
+                    HandleUnknown(message, serverEndpoint);
                     break;
             }
         }
-        catch (Exception ex)
+        catch
         {
-            HandleErrors(ex);
+
         }
+    }
+
+    private void HandleUnknown(Message message, IPEndPoint serverEndpoint)
+    {
+        Console.WriteLine("Handle unknown triggered!");
+        SendMessage(MessageType.Error, serverEndpoint);
+        errorSent = true;
     }
 
     private void HandleData(Message message, IPEndPoint endPoint)
     {
+        if (message is null) return;
+        if (message.Content is null || message.Content.Length < 4) return;
+
         Console.WriteLine($"Message received with {message.Type} and ID -> {message.Content![..4]}");
-        //Console.WriteLine("Content: " + message.Content);
-        //Console.WriteLine($"Set {Convert.ToInt32(message.Content![..4])} to {message.Content[..10]}");
 
-        packets![Convert.ToInt32(message.Content![..4])] = message.Content[4..];
+        receivedText![Convert.ToInt32(message.Content![..4])] = message.Content[4..];
 
-        SendMessage(new Message { Type = MessageType.Ack, Content = message.Content.Substring(0, 4) }, endPoint);
+        SendMessage(new Message { Type = MessageType.Ack, Content = message.Content[..4] }, endPoint);
     }
 
-    private void HandleWelcome(IPEndPoint endPoint)
+    private void HandleEnd()
     {
+        // Check for improper sequence
+        if (!SequenceHolder.HelloSent || !SequenceHolder.WelcomeReceived || !SequenceHolder.RequestDataSent || SequenceHolder.EndReceived)
+        {
+            Console.WriteLine("Improper END packet received.");
+            return;
+        }
+
+        SequenceHolder = (SequenceHolder.HelloSent, SequenceHolder.WelcomeReceived, SequenceHolder.RequestDataSent, true);
+        Console.WriteLine("Packet sending done, 'END' received from server!");
+        
+        
+        // Check if the file exists
+        if (!File.Exists(OutputFile))
+        {
+            // Create the file if it doesn't exist
+            File.Create(OutputFile).Close();
+        }
+
+        // Write all text to the output file
+        using (StreamWriter sw = File.AppendText(OutputFile))
+        {
+            foreach (var kvp in receivedText)
+            {
+                sw.Write(kvp.Value);
+            }
+        }
+
+        Console.WriteLine("Wrote all received packets to the output file! ({0})", OutputFile);
+    }
+
+    private void HandleWelcome(IPEndPoint serverEndpoint)
+    {
+        // Check for improper sequence
+        if (!SequenceHolder.HelloSent || SequenceHolder.WelcomeReceived)
+        {
+            SendMessage(MessageType.Error, serverEndpoint);
+            errorSent = true;
+            return;
+        }
+
         Message requestdata = new Message
         {
             Type = MessageType.RequestData,
             Content = $"{Threshold}"
         };
 
+        SequenceHolder = (SequenceHolder.HelloSent, true, true, SequenceHolder.EndReceived);
         // Send the request data message to the server
-        SendMessage(requestdata, endPoint);
+        SendMessage(requestdata, serverEndpoint);
     }
 
-    private void HandleEnd()
-    {
-        string filePath = "output.txt";
-        FileWriter fileWriter = new FileWriter();
-
-        foreach (KeyValuePair<int, string> packet in packets!)
-        {
-            fileWriter.WriteToFile(filePath, packet.Value);
-        }
-        // Long timeout expired!
-        Console.WriteLine("Packet sending done, 'END' received from server!\nShutting down client!");
-        client.Close();
-        client.Dispose();
-        Environment.Exit(0);
-    }
-
-    private void HandleErrors(Exception ex)
-    {
-        Console.WriteLine($"Client error occurred: {ex.Message}.");
-    }
-
-    private void HandleUnknown(Message message, IPEndPoint endPoint)
-    {
-        Console.WriteLine("Handle unknown triggered!");
-    }
-    class FileWriter
-    {
-        public void WriteToFile(string filePath, string content)
-        {
-            try
-            {
-                // Replace occurrences of "\n" with the platform-specific newline sequence
-                content = content.Replace("\n", Environment.NewLine);
-
-                // Create a new file or append to it if it already exists
-                using (StreamWriter writer = new StreamWriter(filePath, true))
-                {
-                    // Write the modified content to the file
-                    writer.Write(content);
-                }
-
-                //Console.WriteLine("File write successful.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error writing to file: {ex.Message}");
-            }
-        }
-    }
 }

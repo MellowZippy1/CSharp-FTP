@@ -27,6 +27,9 @@ class ServerUDP
     // Tuple that holds information about what packets have been exchanged between the client and server
     private (bool helloReceived, bool welcomeSent, bool RequestDataReceived, bool EndSent) SequenceHolder = new(false, false, false, false);
 
+    // Check if an error has been sent.
+    private bool ErrorSent = false;
+
     // Port that Server is bound to.
     private const int Port = 32000;
 
@@ -58,7 +61,7 @@ class ServerUDP
             Console.WriteLine($"Server has started listening on Port {Port}");
             while (true)
             {
-                if (SequenceHolder.EndSent)
+                if (SequenceHolder.EndSent || ErrorSent)
                 {
                     ResetServer();
                     start();
@@ -154,6 +157,11 @@ class ServerUDP
     private void SendMessage(Message message, EndPoint clientEndpoint)
     {
         if (message is null) return;
+
+        if (message.Type == MessageType.Error)
+        {
+            ErrorSent = true;
+        }
 
         try
         {
@@ -317,7 +325,6 @@ class ServerUDP
         }
 
         SendDataReliably(clientEndpoint);
-        Server.ReceiveTimeout = 5000;
         SendMessage(MessageType.End, clientEndpoint);
         SequenceHolder = (true, true, true, true);
     }
@@ -402,72 +409,23 @@ class ServerUDP
             }
             else
             {
-                // If acknowledgment is invalid, handle error or retransmit packet
+                // If acknowledgment is invalid, reset speed
                 Console.WriteLine("Invalid acknowledgment received.");
-                // Handle error or retransmission
-                // For simplicity, retransmitting the packet
-                SendMessage(Packets[messageId].Item2, clientEndPoint);
+                CurrentSpeed = 1;
+
+                // SendMessage(Packets[messageId].Item2, clientEndPoint);
             }
         }
-        catch (SocketException ex)
+        catch
         {
             // Handle timeout or other socket errors
-            Console.WriteLine($"Error: {ex.Message}");
+            Console.WriteLine($"Did not receive acknowledgment of packet {messageId} in time.");
             // Handle error or retransmission
             // For simplicity, retransmitting the packet
-            SendMessage(Packets[messageId].Item2, clientEndPoint);
+            // SendMessage(MessageType.Error, clientEndPoint);
         }
-    }
 
-    private void EngageSlowStart(EndPoint clientEndpoint)
-    {
-        while (!AllPacketsSent())
-        {
-            var messages = new int[CurrentSpeed];
-            var PacketsIdx = 1;
-            var messagesIdx = 0;
-
-            // Prepare messages to be sent.
-            foreach (var packet in Packets)
-            {
-                // Only get un-ack'd packets
-                if (packet.Value.Item1 == true)
-                {
-                    continue;
-                }
-
-                // Add packet ID to messages[]
-                if (messagesIdx < messages.Length)
-                {
-                    messages[messagesIdx] = PacketsIdx;
-                    messagesIdx += 1;
-                    PacketsIdx += 1;
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            // Send all messages 
-            foreach (var message in messages)
-            {
-                SendMessage(Packets[message].Item2, clientEndpoint);
-                Console.WriteLine($"Sent packet {Packets[message].Item1}");
-
-                // Wait for acknowledgment
-                WaitForAcknowledgment(clientEndpoint, message);
-
-                // Check for end of transmission
-                if (AllPacketsSent(message))
-                {
-                    // All packets sent, exit loop
-                    break;
-                }
-            }
-
-            CurrentSpeed = Math.Min(CurrentSpeed *= 2, ClientThreshold);
-        }
+        Server.ReceiveTimeout = 5000;
     }
 
     private bool CheckMessages(int[] messages)
@@ -523,6 +481,8 @@ class ServerUDP
         Packets = null!;
         SequenceHolder = (false, false, false, false);
         ClientThreshold = 0;
+        CurrentSpeed = 1;
         Server.ReceiveTimeout = 0;
+        ErrorSent = false;
     }
 }
