@@ -1,0 +1,14 @@
+C:\Users\Basic\Downloads\Networking\client\bin\Debug\net6.0\client.exe
+C:\Users\Basic\Downloads\Networking\client\bin\Debug\net6.0\client.deps.json
+C:\Users\Basic\Downloads\Networking\client\bin\Debug\net6.0\client.runtimeconfig.json
+C:\Users\Basic\Downloads\Networking\client\bin\Debug\net6.0\client.dll
+C:\Users\Basic\Downloads\Networking\client\bin\Debug\net6.0\client.pdb
+C:\Users\Basic\Downloads\Networking\client\obj\Debug\net6.0\client.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Basic\Downloads\Networking\client\obj\Debug\net6.0\client.AssemblyInfoInputs.cache
+C:\Users\Basic\Downloads\Networking\client\obj\Debug\net6.0\client.AssemblyInfo.cs
+C:\Users\Basic\Downloads\Networking\client\obj\Debug\net6.0\client.csproj.CoreCompileInputs.cache
+C:\Users\Basic\Downloads\Networking\client\obj\Debug\net6.0\client.dll
+C:\Users\Basic\Downloads\Networking\client\obj\Debug\net6.0\refint\client.dll
+C:\Users\Basic\Downloads\Networking\client\obj\Debug\net6.0\client.pdb
+C:\Users\Basic\Downloads\Networking\client\obj\Debug\net6.0\client.genruntimeconfig.cache
+C:\Users\Basic\Downloads\Networking\client\obj\Debug\net6.0\ref\client.dll

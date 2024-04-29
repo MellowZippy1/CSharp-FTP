@@ -1,0 +1,14 @@
+C:\Users\Basic\Downloads\Networking\server\bin\Debug\net6.0\server.exe
+C:\Users\Basic\Downloads\Networking\server\bin\Debug\net6.0\server.deps.json
+C:\Users\Basic\Downloads\Networking\server\bin\Debug\net6.0\server.runtimeconfig.json
+C:\Users\Basic\Downloads\Networking\server\bin\Debug\net6.0\server.dll
+C:\Users\Basic\Downloads\Networking\server\bin\Debug\net6.0\server.pdb
+C:\Users\Basic\Downloads\Networking\server\obj\Debug\net6.0\server.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Basic\Downloads\Networking\server\obj\Debug\net6.0\server.AssemblyInfoInputs.cache
+C:\Users\Basic\Downloads\Networking\server\obj\Debug\net6.0\server.AssemblyInfo.cs
+C:\Users\Basic\Downloads\Networking\server\obj\Debug\net6.0\server.csproj.CoreCompileInputs.cache
+C:\Users\Basic\Downloads\Networking\server\obj\Debug\net6.0\server.dll
+C:\Users\Basic\Downloads\Networking\server\obj\Debug\net6.0\refint\server.dll
+C:\Users\Basic\Downloads\Networking\server\obj\Debug\net6.0\server.pdb
+C:\Users\Basic\Downloads\Networking\server\obj\Debug\net6.0\server.genruntimeconfig.cache
+C:\Users\Basic\Downloads\Networking\server\obj\Debug\net6.0\ref\server.dll
