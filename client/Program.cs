@@ -25,7 +25,7 @@ class ClientUDP
     private const int Port = 32000;
 
     // Traffic threshold of the client
-    private const int Threshold = 30;
+    private const int Threshold = 3;
 
     // Output file for all received text
     private const string OutputFile = "output.txt";

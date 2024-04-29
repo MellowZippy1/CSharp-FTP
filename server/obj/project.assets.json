@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Netshortking\\networkingfinal\\server\\server.csproj",
+      "projectUniqueName": "D:\\Netslowstarting\\networkingfinal\\server\\server.csproj",
       "projectName": "server",
-      "projectPath": "D:\\Netshortking\\networkingfinal\\server\\server.csproj",
+      "projectPath": "D:\\Netslowstarting\\networkingfinal\\server\\server.csproj",
       "packagesPath": "C:\\Users\\Basic\\.nuget\\packages\\",
-      "outputPath": "D:\\Netshortking\\networkingfinal\\server\\obj\\",
+      "outputPath": "D:\\Netslowstarting\\networkingfinal\\server\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

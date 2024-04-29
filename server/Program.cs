@@ -352,8 +352,11 @@ class ServerUDP
                 // Send packet data
                 SendMessage(packet, clientEndPoint);
                 Console.WriteLine($"Sent packet {packetId}");
+            }
 
-                // Wait for acknowledgment
+            foreach (var kvp in sendingPackets)
+            {
+                var packetId = kvp.Item1;
                 WaitForAcknowledgment(clientEndPoint, packetId);
             }
 
