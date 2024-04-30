@@ -25,7 +25,10 @@ class ClientUDP
     private const int Port = 32000;
 
     // Traffic threshold of the client
-    private const int Threshold = 3;
+    private const int Threshold = 15;
+
+    // File that client wants to request
+    private const string RequestedFile = "hamlet.txt";
 
     // Output file for all received text
     private const string OutputFile = "output.txt";
@@ -254,7 +257,7 @@ class ClientUDP
         Message requestdata = new Message
         {
             Type = MessageType.RequestData,
-            Content = $"{Threshold}"
+            Content = RequestedFile
         };
 
         SequenceHolder = (SequenceHolder.HelloSent, true, true, SequenceHolder.EndReceived);

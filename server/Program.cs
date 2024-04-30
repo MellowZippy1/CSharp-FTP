@@ -46,15 +46,11 @@ class ServerUDP
     // Current speed of packet traffic
     private int CurrentSpeed = 1;
 
-    // File that will be sent to the client
-    private const string FilePath = "hamlet.txt";
-
     //TODO: implement all necessary logic to create sockets and handle incoming messages
     // Do not put all the logic into one method. Create multiple methods to handle different tasks.
     public void start()
     {
         InitializeServer();
-        InitializePackets();
 
         try
         {
@@ -124,7 +120,7 @@ class ServerUDP
         Console.WriteLine("Server initialized.");
     }
 
-    private void InitializePackets()
+    private void InitializePackets(string FilePath)
     {
         var packets = new Dictionary<int, (bool, Message)>();
 
@@ -133,6 +129,8 @@ class ServerUDP
         {
             throw new FileNotFoundException("Data file not found.", FilePath);
         }
+
+        Console.WriteLine($"Preparing packets for {FilePath}");
 
         using (StreamReader reader = new StreamReader(FilePath))
         {
@@ -244,7 +242,7 @@ class ServerUDP
             // Acknowledge packet
             var existingPacket = Packets[packetId];
             Packets[packetId] = (true, existingPacket.Item2);
-            Console.WriteLine("Acknowledged packet {0}", packetId);
+            Console.WriteLine($"Acknowledged packet {packetId}");
         }
         else
         {
@@ -316,13 +314,20 @@ class ServerUDP
             return;
         }
 
-        SequenceHolder = (true, true, true, false);
+        if (message.Content is null || !File.Exists(message.Content))
+        {
+            SendMessage(MessageType.Error, clientEndpoint);
+        }
+
+        InitializePackets(message.Content!);
 
         // Check if there are packets to send.
         if (Packets is null)
         {
             throw new Exception("No packets available.");
         }
+
+        SequenceHolder = (true, true, true, false);
 
         SendDataReliably(clientEndpoint);
         SendMessage(MessageType.End, clientEndpoint);
