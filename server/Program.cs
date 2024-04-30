@@ -108,9 +108,13 @@ class ServerUDP
         // Attempt binding server to port
         try
         {
-            var serverEndpoint = new IPEndPoint(hostAddress, Port);
-            Server.Bind(serverEndpoint);
-            Console.WriteLine("Server Socket bound to {0}", serverEndpoint);
+            // Only re-bind if socket isnt bound
+            if (!Server.IsBound)
+            {
+                var serverEndpoint = new IPEndPoint(hostAddress, Port);
+                Server.Bind(serverEndpoint);
+                Console.WriteLine("Server Socket bound to {0}", serverEndpoint);
+            }
         }
         catch (Exception e)
         {
