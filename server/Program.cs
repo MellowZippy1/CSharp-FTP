@@ -371,7 +371,15 @@ class ServerUDP
 
             if (AllPacketsSent(sendingPackets[sendingPackets.Length - 1].Item1))
             {
-                CurrentSpeed = Math.Min(CurrentSpeed * 2, ClientThreshold);
+                var jumpSpeed = CurrentSpeed * 2;
+                
+                // Only multiply if next multiple of CurrentSpeed is lower than client threshold, otherwise stay the same
+                if (jumpSpeed < ClientThreshold)
+                {
+                    CurrentSpeed = jumpSpeed;
+                }
+                
+                // CurrentSpeed = Math.Min(CurrentSpeed * 2, ClientThreshold);
             }
             else
             {
